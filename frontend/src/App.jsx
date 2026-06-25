@@ -9,7 +9,7 @@ import {
 } from './components/SalesChart'
 import './App.css'
 
-const API_URL = 'http://127.0.0.1:8001/upload-csv'
+const API_URL = 'https://sales-dashboard-ctxe.onrender.com/upload-csv'
 
 function App() {
   const [monthlySales, setMonthlySales] = useState(null)
