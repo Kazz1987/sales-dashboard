@@ -26,6 +26,15 @@ npm run dev
 
 ## API
 - POST /upload-csv : Receive CSV, return JSON
+- POST /analyze : Receive sales summary text, return AI analysis in Japanese
+
+### /analyze endpoint
+- Request body (JSON): `{ "summary": "<sales summary text>" }`
+- Max input length: 10,000 characters (`MAX_ANALYSIS_INPUT`)
+- Response: `{ "analysis": "<AI generated analysis>" }`
+- Requires `ANTHROPIC_API_KEY` env var (500 if missing)
+- Uses model `claude-opus-4-6` via anthropic SDK
+- Claude API errors return 502
 
 ## CSV Format
 columns: date / product / category / amount

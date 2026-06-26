@@ -2,14 +2,18 @@ import io
 import logging
 import os
 
+import anthropic
 import pandas as pd
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger("uvicorn.error")
 
 ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "http://localhost:5173")
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_ANALYSIS_INPUT = 10000
+
 ALLOWED_CONTENT_TYPES = {
     "text/csv",
     "application/vnd.ms-excel",
@@ -23,8 +27,8 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[ALLOWED_ORIGIN],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["POST"],
+    allow_headers=["Content-Type"],
 )
 
 
@@ -102,3 +106,55 @@ async def upload_csv(file: UploadFile = File(...)):
     except Exception:
         logger.exception("Failed to process uploaded CSV")
         raise HTTPException(status_code=500, detail="Failed to process file")
+
+
+class AnalyzeRequest(BaseModel):
+    summary: str = Field(..., min_length=1)
+
+    @field_validator("summary")
+    @classmethod
+    def check_length(cls, v: str) -> str:
+        if len(v) > MAX_ANALYSIS_INPUT:
+            raise ValueError(
+                f"summary must not exceed {MAX_ANALYSIS_INPUT} characters"
+            )
+        return v
+
+
+_ANALYZE_SYSTEM = (
+    "あなたは優秀なビジネスアナリストです。"
+    "提供された売上サマリーをもとに、売上傾向の考察と具体的な施策提案を日本語で行ってください。"
+    "回答は「## 売上傾向の考察」と「## 施策提案」の2セクションで構成してください。"
+)
+
+
+@app.post("/analyze")
+async def analyze(request: AnalyzeRequest):
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        logger.error("ANTHROPIC_API_KEY is not configured")
+        raise HTTPException(
+            status_code=500, detail="AI analysis service is not configured"
+        )
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model="claude-opus-4-6",
+            max_tokens=1024,
+            system=_ANALYZE_SYSTEM,
+            messages=[{"role": "user", "content": request.summary}],
+        )
+        analysis = message.content[0].text
+    except anthropic.APIStatusError as e:
+        logger.error("Claude API returned status %s", e.status_code)
+        raise HTTPException(
+            status_code=502, detail="AI analysis service returned an error"
+        )
+    except anthropic.APIError:
+        logger.exception("Claude API request failed")
+        raise HTTPException(
+            status_code=502, detail="AI analysis service is unavailable"
+        )
+
+    return {"analysis": analysis}
