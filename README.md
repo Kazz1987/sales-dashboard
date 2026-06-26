@@ -1,86 +1,94 @@
-# 売上ダッシュボード（Sales Dashboard）
+# Sales Dashboard
 
-CSVファイルをアップロードするだけで、売上データを自動でグラフ化・集計してくれるWebアプリです。Excelで手作業で集計・グラフ作成していた作業を数秒で済ませることができます。
+Upload a CSV file to instantly visualize sales data and get AI-powered business insights via Claude.
 
-## デモ
+**Live Demo**: https://sales-dashboard-frontend-vfmc.onrender.com
 
-実際に操作して動作を確認いただけます。
+**Sample CSV**: https://github.com/Kazz1987/sales-dashboard/raw/main/sample/sample_sales.csv
 
-🔗 **Live Demo**: https://sales-dashboard-frontend-vfmc.onrender.com
+---
 
-📥 **サンプルCSV**: https://github.com/Kazz1987/sales-dashboard/raw/main/sample/sample_sales.csv
+## Screenshots
 
-サンプルのCSVファイルをアップロードして、ダッシュボードの動きをすぐにお試しいただけます。
+**Dashboard**
+![Dashboard](docs/images/dashboard.png)
 
-## 主な機能
+**CSV Upload**
+![CSV Upload](docs/images/upload.png)
 
-- **CSVアップロード**：ドラッグ&ドロップ、またはクリックで簡単にファイルを選択
-- **KPIカード表示**：合計売上・平均・最大・最小をひと目で確認
-- **月別売上の推移グラフ**：売上のトレンドを折れ線グラフで可視化
-- **カテゴリ別売上グラフ**：どのカテゴリがよく売れているかを棒グラフで表示
-- **売上比率の円グラフ**：カテゴリごとの売上シェアを一目で把握
-- **データ一覧表示**：アップロードしたデータを表形式でも確認可能
-- **エラー表示**：CSVに不正なデータが含まれていてもわかりやすくお知らせ
+**Monthly Sales Chart**
+![Monthly Sales](docs/images/chart-monthly.png)
 
-## 技術スタック
+---
 
-| 区分 | 技術 |
-|------|------|
-| フロントエンド | React + Recharts（グラフ描画ライブラリ） |
-| バックエンド | FastAPI（Python） + pandas（データ処理） |
-| インフラ / ホスティング | Render |
+## Features
 
-## セキュリティ対策
+- **CSV Upload** — drag & drop or click to select; validates format, columns, and file size before processing
+- **KPI Cards** — total revenue, average, max, and min at a glance
+- **Monthly Trend Chart** — line chart showing revenue over time
+- **Category Bar Chart** — compare revenue by product category
+- **Sales Ratio Pie Chart** — category share breakdown
+- **Data Table** — paginated monthly data in tabular form
+- **AI Analysis** — one-click Claude-powered analysis that identifies trends and suggests actionable strategies (Japanese output)
 
-業務データを扱うアプリとして、以下のセキュリティ対策を実装しています。
+---
 
-- ✅ **ファイル形式チェック**：拡張子・Content-Typeの両方を検証し、CSV以外のファイルを拒否
-- ✅ **ファイルサイズ制限**：5MBを超えるファイルは自動的にアップロード拒否
-- ✅ **データ検証**：日付・金額の形式が不正な行は自動的に除外し、安全なデータのみを処理
-- ✅ **エラー情報の保護**：サーバー内部の詳細なエラー情報はクライアントに表示せず、安全なメッセージのみを返却
-- ✅ **CORS設定**：許可されたドメインからのみアクセス可能なように制限
+## Tech Stack
 
-「とりあえず動く」だけでなく、実際の業務利用を想定した安全性を意識した設計になっています。
+| Layer | Technology |
+|---|---|
+| Frontend | React, Recharts, Vite |
+| Backend | FastAPI, pandas |
+| AI | Claude API (`claude-opus-4-6`) via Anthropic SDK |
+| Hosting | Render (frontend + backend) |
 
-## CSVファイルの形式
+---
 
-以下のような列構成のCSVファイルに対応しています。
+## CSV Format
 
 | date | product | category | amount |
-|------|---------|----------|--------|
-| 2024-01-05 | ProductA | 食品 | 3200 |
-| 2024-01-15 | ProductB | 雑貨 | 1500 |
-| 2024-02-10 | ProductA | 食品 | 4200 |
+|---|---|---|---|
+| 2024-01-05 | ProductA | Food | 3200 |
+| 2024-01-15 | ProductB | Goods | 1500 |
+| 2024-02-10 | ProductA | Food | 4200 |
 
-- `date`：日付（YYYY-MM-DD形式）
-- `product`：商品名
-- `category`：カテゴリ名
-- `amount`：金額（数値、0より大きい値）
+- `date` — `YYYY-MM-DD`
+- `product` — product name (any string)
+- `category` — category name (any string)
+- `amount` — positive number
 
-## スクリーンショット
+---
 
-**ダッシュボード全体**
-![ダッシュボード](docs/images/dashboard.png)
+## Security
 
-**CSVアップロード画面**
-![CSVアップロード](docs/images/upload.png)
+- **File validation** — extension and `Content-Type` both checked; non-CSV files are rejected
+- **File size limit** — uploads over 5 MB are rejected before parsing
+- **Input validation** — date and amount fields are coerced; invalid rows are dropped silently; AI analysis input is capped at 10,000 characters via Pydantic
+- **CORS** — only the configured origin is allowed; methods restricted to `POST`; headers restricted to `Content-Type`
+- **API key management** — `ANTHROPIC_API_KEY` is read from server environment variables and never exposed to the client
+- **Error messages** — internal exceptions are logged server-side only; clients receive generic messages with no stack traces or internal details
 
-**月別売上推移グラフ**
-![月別売上推移](docs/images/chart-monthly.png)
+---
 
-## ローカル開発環境のセットアップ
+## Local Development
 
-開発者の方向けに、ローカルで動かす手順を記載します。
+### Prerequisites
 
-### バックエンド（FastAPI）
+- Python 3.10+
+- Node.js 18+
+- An Anthropic API key (for AI analysis)
+
+### Backend
 
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --reload
+ANTHROPIC_API_KEY=your_key_here uvicorn main:app --reload
 ```
 
-### フロントエンド（React）
+The API runs at `http://localhost:8000`.
+
+### Frontend
 
 ```bash
 cd frontend
@@ -88,4 +96,8 @@ npm install
 npm run dev
 ```
 
-ブラウザで `http://localhost:5173` にアクセスすると、アプリが起動します。
+Open `http://localhost:5173` in your browser. By default, the frontend points to `http://localhost:8000`. To override, create `frontend/.env.local`:
+
+```
+VITE_API_URL=http://localhost:8000
+```
